@@ -1769,8 +1769,8 @@ MonoBehaviour:
   - {fileID: 1241408036}
   EnemySpawn: {fileID: 735766444}
   EnemyHq: {fileID: 1336425387}
-  Intro: 1
-  Seed: greene beene
+  Intro: 0
+  Seed: Dit is level 2
 --- !u!114 &843589057
 MonoBehaviour:
   m_ObjectHideFlags: 0

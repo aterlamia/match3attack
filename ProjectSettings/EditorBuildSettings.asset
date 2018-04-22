@@ -4,4 +4,10 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/RtsBoard.unity
+    guid: 3824f875894915141ba2057b7a22efda
+  - enabled: 1
+    path: Assets/lvl2.unity
+    guid: ef87c06893d3744499411e79c6747006

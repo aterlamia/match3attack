@@ -9,7 +9,7 @@ public class Resource
 
     public Resource(GameObject o, int type)
     {
-        _object = o;
+        GameObject = o;
         Type = type;
     }
 
@@ -25,29 +25,35 @@ public class Resource
         set
         {
             _type = value;
-            _object.GetComponentInChildren<TextMesh>().text = value.ToString();
+            GameObject.GetComponentInChildren<TextMesh>().text = value.ToString();
         }
+    }
+
+    public GameObject GameObject
+    {
+        get { return _object; }
+        set { _object = value; }
     }
 
 
     public bool IsDisabled()
     {
-        return ! _object.GetComponentInChildren<SpriteRenderer>().enabled;
+        return ! GameObject.GetComponentInChildren<SpriteRenderer>().enabled;
     }
 
     public void Disable()
     {
-        _object.GetComponentInChildren<SpriteRenderer>().enabled = false;
+        GameObject.GetComponentInChildren<SpriteRenderer>().enabled = false;
     }
 
     public void Enable()
     {
-        _object.GetComponentInChildren<SpriteRenderer>().enabled = true;
+        GameObject.GetComponentInChildren<SpriteRenderer>().enabled = true;
     }
 
     public void SetSprite(Sprite sprite)
     {
-        var spriteRenderer = _object.GetComponentInChildren<SpriteRenderer>();
+        var spriteRenderer = GameObject.GetComponentInChildren<SpriteRenderer>();
         spriteRenderer.sprite = sprite;
     }
 }
