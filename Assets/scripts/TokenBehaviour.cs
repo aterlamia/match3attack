@@ -16,7 +16,6 @@ public class TokenBehaviour : MonoBehaviour
 
     public void Shift()
     {
-        Debug.Log(realPosition.y);
         transform.position = new Vector3(realPosition.x, realPosition.y + 1, realPosition.z);
         shift = true;
     }

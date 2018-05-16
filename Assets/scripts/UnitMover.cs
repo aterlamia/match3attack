@@ -14,6 +14,7 @@ public class UnitMover : MonoBehaviour
 
     public bool playerUnit = false;
 
+
     // Use this for initialization
     void Start()
     {
@@ -33,11 +34,14 @@ public class UnitMover : MonoBehaviour
         }
 
         float step = speed * Time.deltaTime;
-        transform.position = Vector3.MoveTowards(transform.position, target.position, step);
 
-        if (transform.position == target.position)
+        if (transform == null)
         {
-            Destroy(gameObject);
+            return;
+        }
+
+        if (target == null)
+        {
             if (playerUnit == false)
             {
                 board.DamageHq(Damage);
@@ -45,6 +49,32 @@ public class UnitMover : MonoBehaviour
             else
             {
                 board.DamageEnemy(Damage);
+            }
+
+            Destroy(gameObject);
+            return;
+        }
+
+        transform.position = Vector3.MoveTowards(transform.position, target.position, step);
+
+        if (transform.position == target.position)
+        {
+            if (playerUnit == false)
+            {
+                board.DamageHq(Damage);
+                Destroy(gameObject);
+                board.Enemy.Units.RemoveAll(item => item == null);
+            }
+            else
+            {
+                board.DamageEnemy(Damage);
+                Destroy(gameObject);
+                Debug.Log("Hier");
+                Debug.Log(board.User.Units.Count);
+                board.User.Units.RemoveAll(item => item == null);
+                board.User.Tanks.RemoveAll(item => item == null);
+
+                Debug.Log(board.User.Units.Count);
             }
         }
     }
@@ -72,6 +102,7 @@ public class UnitMover : MonoBehaviour
 
 
                     Destroy(gameObject);
+                    board.checkWin();
                 }
             }
         }

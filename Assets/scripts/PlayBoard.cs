@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Analytics;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
@@ -16,6 +14,10 @@ public class PlayBoard : MonoBehaviour
     public AudioClip Boom;
     public AudioClip HealthSound;
 
+    public GameObject VButton;
+    public GameObject DButton;
+    public GameObject LButton;
+
     public AudioClip FuelSound;
     public AudioClip Timesound;
     public AudioClip Bricksound;
@@ -25,7 +27,7 @@ public class PlayBoard : MonoBehaviour
 
     public int lvl = 1;
     private bool attackPhase = false;
-    
+
     public Sprite[] Pieces;
 
     public GameObject BasePiece;
@@ -45,18 +47,21 @@ public class PlayBoard : MonoBehaviour
     public Text Health;
     public Text Turns;
     public Text Bricks;
+    public Text EnemyHealth;
 
     private int _tusnsDone = 0;
     private int _defence = 0;
     private int _ammo = 0;
     private int _money = 0;
     private int _oil = 0;
-    private int _health = 20;
-    private int _turns = 4;
+    public int _health = 20;
+    public int _turns = 4;
     private int _bricks = 0;
-
+    public int EnemyHitpoints = 18;
     public GameObject Barrack;
+    public GameObject TankShop;
     public GameObject Unit;
+    public GameObject Tank;
     public GameObject Turret;
 
     public GameObject Panel;
@@ -94,11 +99,11 @@ public class PlayBoard : MonoBehaviour
 
     private List<int> tutorialTokens;
 
+
     // Use this for initialization
     void Start()
     {
         _audioSource = GetComponent<AudioSource>();
-        UpdateUi();
         Board = new int[BoardWidth, BoardHeight];
         ShiftBoard = new int[BoardWidth, BoardHeight];
         BoardObjects = new Resource[BoardWidth, BoardHeight];
@@ -108,10 +113,12 @@ public class PlayBoard : MonoBehaviour
         CheckBoard();
         RenderBoard();
         ResetShiftBoard();
-        Enemy = new Enemy();
+        LogGrids();
+        Enemy = new Enemy(EnemyHitpoints);
         User = new User();
         tutorialTokens = new List<int>();
 
+        UpdateUi();
         if (Intro)
         {
             fillTutorialTokens();
@@ -120,8 +127,6 @@ public class PlayBoard : MonoBehaviour
 
     private void fillTutorialTokens()
     {
-//        tutorialTokens.Add(3);
-        tutorialTokens.Add(4);
         tutorialTokens.Add(5);
         tutorialTokens.Add(6);
         tutorialTokens.Add(0);
@@ -175,6 +180,7 @@ public class PlayBoard : MonoBehaviour
         Defence.text = _defence.ToString();
         Turns.text = TurnsLeft.ToString();
         Bricks.text = _bricks.ToString();
+        EnemyHealth.text = Enemy.HitPoints.ToString();
     }
 
     private void CheckBoard()
@@ -194,7 +200,6 @@ public class PlayBoard : MonoBehaviour
                         Board[x, y + 1] = Random.Range(0, Pieces.Length);
 
                         found = true;
-                        Debug.Log(string.Format("{0},{1}", x, y + 1));
                     }
                 }
             }
@@ -216,7 +221,6 @@ public class PlayBoard : MonoBehaviour
                             Board[x + 1, y] = Random.Range(0, Pieces.Length);
                         }
 
-                        Debug.Log(string.Format("s{0},{1}", x + 1, y));
                         found = true;
                     }
                 }
@@ -278,14 +282,20 @@ public class PlayBoard : MonoBehaviour
         for (var x = 0; x < BoardWidth; x++)
         {
             BoardObjects[x, sourceY].Enable();
-            ShiftBoard[x, sourceY] = Board[x, sourceY];
+
+            if (x != sourceX)
+            {
+                ShiftBoard[x, sourceY] = Board[x, sourceY];
+            }
         }
+
 
         // If not on same row return
         if (targetY != sourceY)
         {
             return;
         }
+
 
         if (targetX > sourceX && targetX < BoardWidth)
         {
@@ -320,8 +330,11 @@ public class PlayBoard : MonoBehaviour
         for (var y = 0; y < BoardHeight; y++)
         {
             BoardObjects[sourceX, y].Enable();
+            if (y != sourceY)
+            {
+                ShiftBoard[sourceX, y] = Board[sourceX, y];
+            }
         }
-
 
         // If not on same row return
         if (targetX != sourceX)
@@ -329,9 +342,11 @@ public class PlayBoard : MonoBehaviour
             return;
         }
 
+
         // If moving to the left
         if (targetY > sourceY && targetY < BoardHeight)
         {
+            Debug.Log("reseting");
             ShiftBoard[sourceX, targetY] = Board[sourceX, sourceY];
 
             for (var y = sourceY; y < targetY; y++)
@@ -394,24 +409,6 @@ public class PlayBoard : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
-        if (attackPhase)
-        {
-            if (User.Units.Count <= 0 && EnemyUnits.Length <= 0)
-            {
-                if (_health <=0)
-                {
-                    Debug.Log("defeat");
-                } else  if (Enemy.HitPoints <= 0)
-                {
-                    Debug.Log("victory");
-                }
-                else
-                {
-                    Debug.Log("draw");
-                }
-            }
-        }
     }
 
     public void ScoreButton()
@@ -527,11 +524,9 @@ public class PlayBoard : MonoBehaviour
 
         if (scoreCount > 0)
         {
-            Debug.Log("hier");
             RefillBoard();
             //Make sure that new matches are scored as well
             scoreCount += Score();
-            Debug.Log("Daar");
         }
 
         return scoreCount;
@@ -544,10 +539,8 @@ public class PlayBoard : MonoBehaviour
         {
             foreach (var row in rows)
             {
-                Debug.Log("hier2");
                 var coroutine = Grow((int) row.x, (int) row.y);
                 StartCoroutine(coroutine);
-                Debug.Log("Daar2");
                 switch (_shiftBoard[(int) row.x, (int) row.y])
                 {
                     case 0:
@@ -775,6 +768,22 @@ public class PlayBoard : MonoBehaviour
         User.AddBarack(tileObj);
     }
 
+    public void BuildTankShop()
+    {
+        if (_bricks < 40)
+        {
+            return;
+        }
+
+        _bricks -= 40;
+        UpdateUi();
+        var placeholder = GameObject.Find("PlayerBuildingPlaceholder2");
+        var tileObj =
+            Instantiate(TankShop, placeholder.transform.position, Quaternion.identity, transform) as GameObject;
+        tileObj.transform.localScale = new Vector3(1.0f, -1.0f, 1.0f);
+        User.AddTankShop(tileObj);
+    }
+
     public void BuildUnit()
     {
         if (_money < 30 || User.Baracks.Count == 0)
@@ -786,24 +795,144 @@ public class PlayBoard : MonoBehaviour
         UpdateUi();
         GameObject barack = User.Baracks.First();
         var pos = barack.GetComponentInChildren<BoxCollider2D>().transform.position;
-        pos = pos + new Vector3(User.Units.Count * 0.5f, User.Units.Count * 0.5f, 0f);
+        pos = pos + new Vector3(User.Units.Count * 0.3f, Random.Range(0.0f, 0.3f), 0f);
         var tileObj =
             Instantiate(Unit, pos, Quaternion.identity,
                 transform) as GameObject;
         tileObj.GetComponent<UnitMover>().target = GameObject.Find("EnemyyHq").transform;
         tileObj.GetComponent<UnitMover>().board = this;
         tileObj.GetComponent<UnitMover>().playerUnit = true;
+        tileObj.GetComponent<UnitMover>().speed = Random.Range(1.8f, 2.3f);
+            
         User.AddUnit(tileObj);
     }
+
+
+    public void BuildTank()
+    {
+        if (_oil < 40 || User.TankShops.Count == 0)
+        {
+            return;
+        }
+
+        _oil -= 40;
+        UpdateUi();
+        GameObject shop = User.TankShops.First();
+        var pos = shop.GetComponent<BoxCollider2D>().transform.position;
+        pos = pos + new Vector3(User.Tanks.Count * 0.5f, 1f, 0f);
+        var tileObj =
+            Instantiate(Tank, pos, Quaternion.identity,
+                transform) as GameObject;
+        tileObj.transform.localScale = new Vector3(1f, 1f, 1f);
+        tileObj.GetComponent<UnitMover>().target = GameObject.Find("EnemyyHq").transform;
+        tileObj.GetComponent<UnitMover>().board = this;
+        tileObj.GetComponent<UnitMover>().playerUnit = true;
+        User.Addtank(tileObj);
+    }
+
 
     public void DamageHq(int i)
     {
         _health -= i;
         UpdateUi();
+        checkWin();
     }
+
+    public void checkWin()
+    {
+        Debug.Log("checkwin");
+
+        User.Units.RemoveAll(item => item == null);
+        User.Tanks.RemoveAll(item => item == null);
+        EnemyUnits = EnemyUnits.Where(c => c != null).ToArray();
+
+        Debug.Log(string.Format("u 1 {0}", User.Units.Count));
+        Debug.Log(string.Format("u 2 {0}", User.Tanks.Count));
+        Debug.Log(string.Format("e 1 {0}", EnemyUnits.Length));
+
+
+        if ((User.Units.Count <= 1) && (User.Tanks.Count <= 0) && EnemyUnits.Length <= 1)
+        {
+            Debug.Log(string.Format("_health {0}", _health));
+            Debug.Log(string.Format("Enemy.HitPoints {0}", Enemy.HitPoints));
+            Debug.Log(string.Format("User.Units.Count {0}", User.Units.Count));
+            if (_health <= 0)
+            {
+                if (DButton != null)
+                {
+                    DButton.SetActive(false);
+                }
+                if (LButton != null)
+                {
+                    DButton.SetActive(true);
+                }
+                
+                Debug.Log("defeat");
+            }
+            else if (Enemy.HitPoints <= 0)
+            {
+                Debug.Log("victory");
+                VButton.SetActive(true);
+                if (DButton != null)
+                {
+                    DButton.SetActive(false);
+                }
+            }
+            else
+            {
+                if (DButton != null)
+                {
+                    DButton.SetActive(true);
+                }
+
+                Debug.Log("draw");
+            }
+        }
+    }
+
+    private bool CheckUsersGone()
+    {
+        foreach (var unit in User.Units)
+        {
+            if (unit != null)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool CheckTanksGone()
+    {
+        foreach (var unit in User.Tanks)
+        {
+            if (unit != null)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool CheckEnemyUnitsGone()
+    {
+        for (var i = 0; i < EnemyUnits.Length; i++)
+        {
+            if (EnemyUnits[i] != null)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 
     public void StartAttack()
     {
+        attackPhase = true;
         for (var x = 0; x < EnemyUnits.Length; x++)
         {
             EnemyUnits[x].GetComponent<UnitMover>().Attack();
@@ -813,6 +942,44 @@ public class PlayBoard : MonoBehaviour
         {
             unit.GetComponent<UnitMover>().Attack();
         }
+
+
+        foreach (var tank in User.Tanks)
+        {
+            tank.GetComponent<UnitMover>().Attack();
+        }
+    }
+
+    public void Loadnext()
+    {
+        if (lvl == 1)
+        {
+            Application.LoadLevel("lvl2");
+        }
+
+        if (lvl == 2)
+        {
+            Application.LoadLevel("lvl3");
+        }
+    }
+
+    public void Restart()
+    {
+        if (lvl == 2)
+        {
+            Application.LoadLevel("lvl2");
+        }
+
+        if (lvl == 3)
+        {
+            Application.LoadLevel("lvl3");
+        }
+    }
+
+
+    public void close()
+    {
+        Application.Quit();
     }
 
     public void PlayNope()
@@ -822,15 +989,15 @@ public class PlayBoard : MonoBehaviour
 
     public void DamageEnemy(int i)
     {
-        if (Enemy.HitPoints - i == 0)
+        Enemy.HitPoints -= 9;
+        UpdateUi();
+        if (Enemy.HitPoints == 0)
         {
             _audioSource.PlayOneShot(Boom, 0.8f);
             Destroy(EnemyHq);
             EnemyHq = null;
-            Application.LoadLevel("lvl2");
         }
 
-        Enemy.HitPoints -= 9;
+        checkWin();
     }
-
 }

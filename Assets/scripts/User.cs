@@ -1,13 +1,18 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+
 public class User
 {
     private List<GameObject> _baracks;
+    private List<GameObject> _tankShops;
+    public List<GameObject> Tanks { get; set; }
 
     public User()
     {
         Baracks = new List<GameObject>();
+        TankShops = new List<GameObject>();
         Units = new List<GameObject>();
+        Tanks = new List<GameObject>();
         Defence = new Turret[7];
     }
 
@@ -20,6 +25,12 @@ public class User
     public List<GameObject> Units { get; set; }
 
     public Turret[] Defence { get; set; }
+
+    public List<GameObject> TankShops
+    {
+        get { return _tankShops; }
+        set { _tankShops = value; }
+    }
 
     public int GetFreeSpot()
     {
@@ -44,6 +55,10 @@ public class User
         Units.Add(unit);
     }
 
+    public void Addtank(GameObject unit)
+    {
+        Tanks.Add(unit);
+    }
     public void AddDefence(Turret turret)
     {
         Defence[GetFreeSpot() - 1] = turret;
@@ -73,5 +88,10 @@ public class User
                 return;
             }
         }
+    }
+
+    public void AddTankShop(GameObject tileObj)
+    {
+        TankShops.Add(tileObj);
     }
 }

@@ -6,11 +6,11 @@ public class Enemy
     private List<GameObject> _baracks;
     private List<GameObject> _units;
 
-    public Enemy()
+    public Enemy(int hotpints)
     {
         Baracks = new List<GameObject>();
         Units = new List<GameObject>();
-        HitPoints = 18;
+        HitPoints = hotpints;
     }
 
     public List<GameObject> Baracks
